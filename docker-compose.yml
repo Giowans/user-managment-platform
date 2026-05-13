@@ -1,0 +1,120 @@
+version: '3.9'
+
+services:
+
+  postgres:
+    image: postgres:16
+    container_name: ump-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: user_management
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  mongodb:
+    image: mongo:7
+    container_name: ump-mongodb
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+
+  redis:
+    image: redis:7
+    container_name: ump-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: ump-rabbitmq
+    restart: unless-stopped
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+
+  qdrant:
+    image: qdrant/qdrant
+    container_name: ump-qdrant
+    restart: unless-stopped
+    ports:
+      - "6333:6333"
+    volumes:
+      - qdrant_data:/qdrant/storage
+
+  api-gateway:
+    build:
+      context: ./services/api-gateway
+    container_name: ump-api-gateway
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    depends_on:
+      - auth-service
+      - user-service
+      - ai-service
+
+  auth-service:
+    build:
+      context: ./services/auth-service
+    container_name: ump-auth-service
+    restart: unless-stopped
+    ports:
+      - "3001:3001"
+    depends_on:
+      - postgres
+      - redis
+      - rabbitmq
+
+  user-service:
+    build:
+      context: ./services/user-service
+    container_name: ump-user-service
+    restart: unless-stopped
+    ports:
+      - "3002:3002"
+    depends_on:
+      - postgres
+      - rabbitmq
+
+  audit-service:
+    build:
+      context: ./services/audit-service
+    container_name: ump-audit-service
+    restart: unless-stopped
+    ports:
+      - "3003:3003"
+    depends_on:
+      - mongodb
+      - rabbitmq
+
+  ai-service:
+    build:
+      context: ./services/ai-service
+    container_name: ump-ai-service
+    restart: unless-stopped
+    ports:
+      - "3004:3004"
+    depends_on:
+      - qdrant
+
+  web-app:
+    build:
+      context: ./frontend/web-app
+    container_name: ump-web-app
+    restart: unless-stopped
+    ports:
+      - "5173:5173"
+    depends_on:
+      - api-gateway
+
+volumes:
+  postgres_data:
+  mongodb_data:
+  qdrant_data:
