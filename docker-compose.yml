@@ -53,20 +53,29 @@ services:
       context: ./services/api-gateway
     container_name: ump-api-gateway
     restart: unless-stopped
+    env_file:
+      - ./services/api-gateway/.env
     ports:
       - "3000:3000"
+    volumes:
+      - ./services/api-gateway:/app
+      - /app/node_modules
     depends_on:
       - auth-service
       - user-service
-      - ai-service
 
   auth-service:
     build:
       context: ./services/auth-service
     container_name: ump-auth-service
     restart: unless-stopped
+    env_file:
+      - ./services/auth-service/.env
     ports:
-      - "3001:3001"
+      - "3002:3002"
+    volumes:
+      - ./services/auth-service:/app
+      - /app/node_modules
     depends_on:
       - postgres
       - redis
@@ -77,8 +86,13 @@ services:
       context: ./services/user-service
     container_name: ump-user-service
     restart: unless-stopped
+    env_file:
+      - ./services/user-service/.env
     ports:
-      - "3002:3002"
+      - "3003:3003"
+    volumes:
+      - ./services/user-service:/app
+      - /app/node_modules
     depends_on:
       - postgres
       - rabbitmq
@@ -88,29 +102,29 @@ services:
       context: ./services/audit-service
     container_name: ump-audit-service
     restart: unless-stopped
+    env_file:
+      - ./services/audit-service/.env
     ports:
-      - "3003:3003"
+      - "3001:3001"
+    volumes:
+      - ./services/audit-service:/app
+      - /app/node_modules
     depends_on:
       - mongodb
       - rabbitmq
-
-  ai-service:
-    build:
-      context: ./services/ai-service
-    container_name: ump-ai-service
-    restart: unless-stopped
-    ports:
-      - "3004:3004"
-    depends_on:
-      - qdrant
 
   web-app:
     build:
       context: ./frontend/web-app
     container_name: ump-web-app
     restart: unless-stopped
+    env_file:
+      - ./frontend/web-app/.env
     ports:
       - "5173:5173"
+    volumes:
+      - ./frontend/web-app:/app
+      - /app/node_modules
     depends_on:
       - api-gateway
 
