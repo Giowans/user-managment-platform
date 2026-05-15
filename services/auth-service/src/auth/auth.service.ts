@@ -1,54 +1,63 @@
+import { PrismaService } from '../prisma/prisma.service';
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 
 @Injectable()
 export class AuthService {
-    constructor(private readonly jwtService: JwtService) { }
+  constructor(
+    private readonly jwtService: JwtService,
+    private readonly prisma: PrismaService,
+  ) {}
 
-    private users: { id: number; email: string; password: string; roles: string[] }[] = [];
+  async register(data: any) {
+    const hashedPassword = await bcrypt.hash(data.password, 10);
 
-    async register(data: any) {
-        const hashedPassword = await bcrypt.hash(data.password, 10);
+    const user = await this.prisma.user.create({
+      data: {
+        ...data,
+        password: hashedPassword,
+      },
+    });
 
-        const user = {
-            id: Date.now(),
-            email: data.email,
-            password: hashedPassword,
-            roles: ['user'],
-        };
+    return {
+      message: 'User registered successfully',
+    };
+  }
 
-        this.users.push(user);
+  async login(data: any) {
+    const user = await this.prisma.user.findUnique({
+      where: { email: data.email },
+      include: {
+        roles: {
+          include: {
+            role: true,
+          },
+        },
+      },
+    });
 
-        return {
-            message: 'User registered successfully',
-        };
+    if (!user) {
+      throw new UnauthorizedException('Invalid credentials');
     }
 
-    async login(data: any) {
-        const user = this.users.find((u) => u.email === data.email);
+    const isValid = await bcrypt.compare(data.password, user.password);
 
-        if (!user) {
-            throw new UnauthorizedException('Invalid credentials');
-        }
-
-        const isValid = await bcrypt.compare(
-            data.password,
-            user.password,
-        );
-
-        if (!isValid) {
-            throw new UnauthorizedException('Invalid credentials');
-        }
-
-        const payload = {
-            sub: user.id,
-            email: user.email,
-            roles: user.roles,
-        };
-
-        return {
-            access_token: this.jwtService.sign(payload),
-        };
+    if (!isValid) {
+      throw new UnauthorizedException('Invalid credentials');
     }
+
+    const payload = {
+      sub: user.id,
+      email: user.email,
+      roles: user.roles.map((userRole) => ({
+        id: userRole.role.id,
+        name: userRole.role.name,
+      })),
+    };
+
+    return {
+      access_token: this.jwtService.sign(payload),
+    };
+  }
 }
