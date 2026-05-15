@@ -6,7 +6,7 @@ import * as bcrypt from 'bcrypt';
 export class AuthService {
     constructor(private readonly jwtService: JwtService) { }
 
-    private users: { id: number; email: string; password: string; role: string }[] = [];
+    private users: { id: number; email: string; password: string; roles: string[] }[] = [];
 
     async register(data: any) {
         const hashedPassword = await bcrypt.hash(data.password, 10);
@@ -15,7 +15,7 @@ export class AuthService {
             id: Date.now(),
             email: data.email,
             password: hashedPassword,
-            role: 'user',
+            roles: ['user'],
         };
 
         this.users.push(user);
@@ -44,7 +44,7 @@ export class AuthService {
         const payload = {
             sub: user.id,
             email: user.email,
-            role: user.role,
+            roles: user.roles,
         };
 
         return {
