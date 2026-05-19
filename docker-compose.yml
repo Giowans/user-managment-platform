@@ -69,7 +69,8 @@ services:
 
   auth-service:
     build:
-      context: ./services/auth-service
+      context: .
+      dockerfile: ./services/auth-service/Dockerfile
     container_name: ump-auth-service
     restart: unless-stopped
     env_file:
@@ -86,7 +87,8 @@ services:
 
   user-service:
     build:
-      context: ./services/user-service
+      context: .
+      dockerfile: ./services/user-service/Dockerfile
     container_name: ump-user-service
     restart: unless-stopped
     env_file:
@@ -102,7 +104,8 @@ services:
 
   audit-service:
     build:
-      context: ./services/audit-service
+      context: .
+      dockerfile: ./services/audit-service/Dockerfile
     container_name: ump-audit-service
     restart: unless-stopped
     env_file:

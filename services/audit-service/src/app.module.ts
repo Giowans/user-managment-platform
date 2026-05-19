@@ -15,7 +15,9 @@ import { AuditModule } from './audit/audit.module';
     MongooseModule.forRootAsync({
       imports: [ConfigModule],
       useFactory: async (configService: ConfigService) => ({
-        uri: configService.get<string>('MONGO_URI')
+        uri: configService.get<string>('MONGO_URI'),
+        retryAttempts: 10,
+        retryDelay: 5000,
       }),
       inject: [ConfigService],
     }),

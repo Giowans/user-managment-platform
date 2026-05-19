@@ -8,26 +8,26 @@ import { AuditLog, AuditLogDocument } from './schemas/audit-log.schema';
 export class AuditService {
   constructor(
     @InjectModel(AuditLog.name) private auditLogModel: Model<AuditLogDocument>,
-  ) {}
+  ) { }
 
   async findAll(filters: GetAuditLogsDto) {
     const { userEmail, role, eventType, startDate, endDate, metadataOnly } = filters;
     const query: any = {};
 
-    if (userEmail) query.userEmail = userEmail;
-    if (role) query.role = role;
+    if (userEmail) query.payload.userEmail = userEmail;
+    if (role) query.payload.role = role;
     if (eventType) query.eventType = eventType;
-    
+
     if (startDate || endDate) {
-      query.createdAt = {};
-      if (startDate) query.createdAt.$gte = new Date(startDate);
-      if (endDate) query.createdAt.$lte = new Date(endDate);
+      query.timestamp = {};
+      if (startDate) query.timestamp.$gte = new Date(startDate);
+      if (endDate) query.timestamp.$lte = new Date(endDate);
     }
 
     const logs = await this.auditLogModel.find(query).exec();
 
     if (metadataOnly) {
-      return logs.map((log) => log.metadata);
+      return logs.map((log) => log.payload?.metadata);
     }
 
     return logs;

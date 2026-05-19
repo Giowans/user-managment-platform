@@ -1,0 +1,22 @@
+{
+  "name": "@shared/rabbitmq",
+  "version": "1.0.0",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "description": "",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "@nestjs/common": "^11.1.21",
+    "amqplib": "^2.0.1"
+  },
+  "devDependencies": {
+    "@types/node": "^25.8.0",
+    "typescript": "^6.0.3"
+  }
+}

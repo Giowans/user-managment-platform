@@ -1,12 +1,14 @@
 FROM node:22-alpine
 
-WORKDIR /app
+WORKDIR /workspace
 
-COPY package*.json ./
+COPY libs ./libs
+
+COPY services/audit-service ./services/audit-service
+
+WORKDIR /workspace/services/audit-service
 
 RUN npm install
-
-COPY . .
 
 EXPOSE 3001
 

@@ -6,9 +6,11 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 import { JwtStrategy } from './jwt.strategy';
+import { RabbitMQModule } from '@shared/rabbitmq';
 
 @Module({
   imports: [
+    RabbitMQModule,
     ConfigModule,
     PassportModule,
     JwtModule.registerAsync({

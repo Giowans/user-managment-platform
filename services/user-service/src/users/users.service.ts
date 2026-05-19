@@ -3,9 +3,22 @@ import { PrismaService } from '../prisma/prisma.service';
 import { CreateUserDto } from './dtos/create-user.dto';
 import { UpdateUserDto } from './dtos/update-user.dto';
 import * as bcrypt from 'bcrypt';
+
+import {
+  RabbitMQService,
+} from '@shared/rabbitmq';
+
+import {
+  UserEvents,
+  DomainEvent
+} from '@shared/contracts';
+
 @Injectable()
 export class UsersService {
-  constructor(private prisma: PrismaService) { }
+  constructor(
+    private readonly rabbitmqService: RabbitMQService,
+    private prisma: PrismaService
+  ) { }
 
   async create(data: CreateUserDto) {
     const { roles, ...userData } = data;
@@ -46,9 +59,19 @@ export class UsersService {
   }
 
   async update(id: string, data: UpdateUserDto) {
-    await this.findOne(id);
 
     const { roles, ...userData } = data;
+    const updatedUser = await this.prisma.user.update({
+      where: { id },
+      omit: { password: true },
+      data: {
+        ...userData
+      },
+    });
+
+    if (!updatedUser.id) {
+      throw new NotFoundException(`User with ID ${id} not found`);
+    }
 
     if (roles) {
       await this.prisma.userRole.deleteMany({ where: { userId: id } });
@@ -61,6 +84,20 @@ export class UsersService {
         });
       }
     }
+
+    const userUpdatedEvent: DomainEvent<{ userId: string; updatedAt: Date }> = {
+      eventType: UserEvents.USER_UPDATED,
+      payload: {
+        userId: updatedUser.id,
+        updatedAt: new Date(),
+      },
+      timestamp: new Date(),
+    };
+
+    await this.rabbitmqService.publish(
+      UserEvents.USER_UPDATED,
+      userUpdatedEvent,
+    );
 
     return this.findOne(id);
   }

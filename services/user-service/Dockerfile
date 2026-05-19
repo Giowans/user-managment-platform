@@ -1,12 +1,16 @@
 FROM node:22-alpine
 
-WORKDIR /app
+WORKDIR /workspace
 
-COPY package*.json ./
+COPY libs ./libs
+
+COPY services/user-service ./services/user-service
+
+WORKDIR /workspace/services/user-service
 
 RUN npm install
 
-COPY . .
+RUN npx prisma generate
 
 EXPOSE 3003
 

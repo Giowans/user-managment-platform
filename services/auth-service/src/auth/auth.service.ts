@@ -3,12 +3,22 @@ import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 
+import {
+  RabbitMQService,
+} from '@shared/rabbitmq';
+
+import {
+  AuthEvents,
+  UserLoggedInPayload,
+  DomainEvent
+} from '@shared/contracts';
 @Injectable()
 export class AuthService {
   constructor(
     private readonly jwtService: JwtService,
     private readonly prisma: PrismaService,
-  ) {}
+    private readonly rabbitmqService: RabbitMQService,
+  ) { }
 
   async register(data: any) {
     const hashedPassword = await bcrypt.hash(data.password, 10);
@@ -55,6 +65,24 @@ export class AuthService {
         name: userRole.role.name,
       })),
     };
+
+    const userLoggedInEvent: DomainEvent<UserLoggedInPayload> = {
+      eventType: AuthEvents.USER_LOGGED_IN,
+      payload: {
+        userId: user.id,
+        email: user.email,
+        roles: user.roles.map((userRole) => ({
+          id: userRole.role.id,
+          name: userRole.role.name,
+        })),
+      },
+      timestamp: new Date(),
+    };
+
+    await this.rabbitmqService.publish(
+      AuthEvents.USER_LOGGED_IN,
+      userLoggedInEvent,
+    );
 
     return {
       access_token: this.jwtService.sign(payload),
